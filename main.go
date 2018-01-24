@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/nlopes/slack"
 	"k8s.io/api/core/v1"
@@ -55,15 +56,12 @@ func sendtoslack(e *v1.Event) error {
 	attachment := slack.Attachment{
 		// The fallback message shows in clients such as IRC or OS X notifications.
 		Fallback: e.Message,
+		Text:     e.Message,
 		Fields: []slack.AttachmentField{
 			slack.AttachmentField{
 				Title: "Namespace",
 				Value: e.Namespace,
 				Short: true,
-			},
-			slack.AttachmentField{
-				Title: "Message",
-				Value: e.Message,
 			},
 			slack.AttachmentField{
 				Title: "Object",
@@ -83,6 +81,21 @@ func sendtoslack(e *v1.Event) error {
 			slack.AttachmentField{
 				Title: "Component",
 				Value: e.Source.Component,
+				Short: true,
+			},
+			slack.AttachmentField{
+				Title: "Count",
+				Value: fmt.Sprintf("%d", e.Count),
+				Short: true,
+			},
+			slack.AttachmentField{
+				Title: "First",
+				Value: e.FirstTimestamp.Format(time.RFC3339),
+				Short: true,
+			},
+			slack.AttachmentField{
+				Title: "Last",
+				Value: e.LastTimestamp.Format(time.RFC3339),
 				Short: true,
 			},
 		},
@@ -116,23 +129,31 @@ func main() {
 	if len(evlist.Items) > 0 {
 		watchopt.ResourceVersion = evlist.GetListMeta().GetResourceVersion()
 	}
-	log.Println(watchopt)
-	watcher, err := kubeclient.CoreV1().Events(*namespace).Watch(watchopt)
-	if err != nil {
-		log.Fatal(err)
-	}
-	for item := range watcher.ResultChan() {
-		//log.Println(item.Type, item.Object)
-		event, ok := item.Object.(*v1.Event)
-		if ok {
-			// Filter namespace
-			if event.Namespace != *exclude {
-				log.Println(event.Name, event.Namespace, event.Count, event.Type, event.Reason, event.FirstTimestamp, event.LastTimestamp, event.Message)
-				err := sendtoslack(event)
-				if err != nil {
-					log.Println(err)
+	//watcher, err := cache.NewListWatchFromClient(kubeclient.RESTClient(), "event", *namespace, fields.Everything()).Watch(watchopt)
+	for {
+		log.Println(watchopt)
+		watcher, err := kubeclient.CoreV1().Events(*namespace).Watch(watchopt)
+		if err != nil {
+			log.Fatal(err)
+		}
+		for item := range watcher.ResultChan() {
+			//log.Println(item.Type, item.Object)
+			//Make note of last processed item
+			event, ok := item.Object.(*v1.Event)
+			if ok {
+				watchopt.ResourceVersion = event.GetResourceVersion()
+				// Filter namespace
+				if event.Namespace != *exclude {
+					log.Println(event.Name, event.Namespace, event.Count, event.Type, event.Reason, event.FirstTimestamp, event.LastTimestamp, event.Message)
+					err := sendtoslack(event)
+					if err != nil {
+						log.Println(err)
+					}
 				}
+			} else {
+				log.Println("Not *v1.Event", item)
 			}
 		}
+		log.Println("Resuming loop")
 	}
 }
