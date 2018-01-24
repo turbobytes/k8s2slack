@@ -3,3 +3,4 @@ import:
 - package: k8s.io/client-go
   version: v6.0.0
 - package: github.com/nlopes/slack
+- package: github.com/mattn/go-shellwords

@@ -1,5 +1,5 @@
-hash: b29a9560f38171788a602bee0c7c4b3effd9642e395d12ccfbfac3c9240eb109
-updated: 2018-01-23T16:18:47.740515552+07:00
+hash: 8794c58e7a46ba9c2b066bd3bca7aa68ef1686f6276c9f18031c5b878a557232
+updated: 2018-01-24T22:27:30.03429982+07:00
 imports:
 - name: github.com/emicklei/go-restful
   version: ff4f55a206334ef123e4f79bbf348980da81ca46
@@ -40,6 +40,8 @@ imports:
   - OpenAPIv2
   - compiler
   - extensions
+- name: github.com/gorilla/websocket
+  version: 292fd08b2560ad524ee37396253d71570339a821
 - name: github.com/gregjones/httpcache
   version: 787624de3eb7bd915c329cba748687a3b22666a6
   subpackages:
@@ -58,6 +60,8 @@ imports:
   - buffer
   - jlexer
   - jwriter
+- name: github.com/mattn/go-shellwords
+  version: 95c860c1895b21b58903abdd1d9c591560b0601c
 - name: github.com/nlopes/slack
   version: 280245264a9d8c496e95ead447421d37cd95f93a
 - name: github.com/peterbourgon/diskv
