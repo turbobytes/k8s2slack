@@ -215,13 +215,27 @@ func podlist(parentType, parentNamespace, parentName string) string {
 		}
 		selector := strings.Join(pairs, ",")
 		return result + renderpodlist(ss.Namespace, selector)
-
+	case "daemonsets":
+		fallthrough
+	case "ds":
+		ds, err := kubeclient.ExtensionsV1beta1().DaemonSets(parentNamespace).Get(parentName, metav1.GetOptions{})
+		if err != nil {
+			return "Error: " + err.Error()
+		}
+		result := fmt.Sprintf("Replicas: %v/%v of %v\n", ds.Status.NumberReady, ds.Status.CurrentNumberScheduled, ds.Status.NumberAvailable)
+		pairs := make([]string, 0)
+		for k, v := range ds.Spec.Selector.MatchLabels {
+			pairs = append(pairs, k+"="+v)
+		}
+		selector := strings.Join(pairs, ",")
+		return result + renderpodlist(ds.Namespace, selector)
 	default:
 		return "Unsupported type: " + parentType
 	}
 }
 
 func listCommands() string {
+	//Deployments
 	dps, err := kubeclient.AppsV1beta1().Deployments("").List(metav1.ListOptions{})
 	if err != nil {
 		return "Error: " + err.Error()
@@ -230,7 +244,7 @@ func listCommands() string {
 	for _, dp := range dps.Items {
 		result += fmt.Sprintf("deploy %s %s\n", dp.Namespace, dp.Name)
 	}
-
+	//Statefulsets
 	sts, err := kubeclient.AppsV1beta1().StatefulSets("").List(metav1.ListOptions{})
 	if err != nil {
 		return "Error: " + err.Error()
@@ -238,7 +252,14 @@ func listCommands() string {
 	for _, s := range sts.Items {
 		result += fmt.Sprintf("sts %s %s\n", s.Namespace, s.Name)
 	}
-
+	//DaemonSets
+	dss, err := kubeclient.ExtensionsV1beta1().DaemonSets("").List(metav1.ListOptions{})
+	if err != nil {
+		return "Error: " + err.Error()
+	}
+	for _, s := range dss.Items {
+		result += fmt.Sprintf("ds %s %s\n", s.Namespace, s.Name)
+	}
 	return result
 }
 
