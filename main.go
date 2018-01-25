@@ -23,10 +23,14 @@ import (
 //TODO: bot commands, simple queries, nothing too invasive.
 
 var (
-	kubeconfig = flag.String("kubeconfig", "", "path to kubeconfig, if absent then we use rest.InClusterConfig()")
-	apiserver  = flag.String("apiserver", "", "Url to apiserver, blank to read from kubeconfig")
-	namespace  = flag.String("namespace", "", "Namespace to watch, blank means all namespaces")
-	exclude    = flag.String("exclude", "", "Namespace to filter out")
+	kubeconfig        = flag.String("kubeconfig", "", "path to kubeconfig, if absent then we use rest.InClusterConfig()")
+	apiserver         = flag.String("apiserver", "", "Url to apiserver, blank to read from kubeconfig")
+	namespace         = flag.String("namespace", "", "Namespace to watch, blank means all namespaces")
+	exclude           = flag.String("exclude", "", "Namespace to filter out")
+	heapsterSvcNS     = flag.String("heapsterns", "kube-system", "The namespace heapster is running on, set to blank to dissable")
+	heapsterSvcName   = flag.String("heapstersvc", "heapster", "The service name for heapster, set to blank to dissable")
+	heapsterSvcScheme = flag.String("heapsterscheme", "http", "The service name for heapster, set to blank to dissable")
+	heapsterSvcPort   = flag.String("heapsterport", "80", "The port for heapster, set to blank to dissable")
 )
 
 var (
@@ -100,29 +104,31 @@ func renderpodlist(namespace, selector string) string {
 	//Fetch metrics from heapster...
 	podCPU := make(map[string]*resource.Quantity)
 	podMemory := make(map[string]*resource.Quantity)
-	//TODO: Make optional
-	resp := kubeclient.CoreV1().Services("kube-system").ProxyGet("http", "heapster", "80", "/apis/metrics/v1alpha1/pods", map[string]string{"labelSelector": selector})
-	byt, err := resp.DoRaw()
-	if err != nil {
-		log.Println(err) //Silent fail
-	} else {
-		res := &PodMetricsList{}
-		err = json.Unmarshal(byt, res)
+	//Make optional
+	if *heapsterSvcNS != "" && *heapsterSvcScheme != "" && *heapsterSvcName != "" && *heapsterSvcPort != "" {
+		resp := kubeclient.CoreV1().Services(*heapsterSvcNS).ProxyGet(*heapsterSvcScheme, *heapsterSvcName, *heapsterSvcPort, "/apis/metrics/v1alpha1/pods", map[string]string{"labelSelector": selector})
+		byt, err := resp.DoRaw()
 		if err != nil {
 			log.Println(err) //Silent fail
 		} else {
-			//log.Println(res)
-			for _, pod := range res.Items {
-				for _, container := range pod.Containers {
-					if podCPU[pod.Name] == nil {
-						podCPU[pod.Name] = container.Usage.Cpu()
-					} else {
-						podCPU[pod.Name].Add(*container.Usage.Cpu())
-					}
-					if podMemory[pod.Name] == nil {
-						podMemory[pod.Name] = container.Usage.Memory()
-					} else {
-						podMemory[pod.Name].Add(*container.Usage.Memory())
+			res := &PodMetricsList{}
+			err = json.Unmarshal(byt, res)
+			if err != nil {
+				log.Println(err) //Silent fail
+			} else {
+				//log.Println(res)
+				for _, pod := range res.Items {
+					for _, container := range pod.Containers {
+						if podCPU[pod.Name] == nil {
+							podCPU[pod.Name] = container.Usage.Cpu()
+						} else {
+							podCPU[pod.Name].Add(*container.Usage.Cpu())
+						}
+						if podMemory[pod.Name] == nil {
+							podMemory[pod.Name] = container.Usage.Memory()
+						} else {
+							podMemory[pod.Name].Add(*container.Usage.Memory())
+						}
 					}
 				}
 			}
@@ -277,7 +283,7 @@ func kubectlproxy() {
 			UserID = ev.Info.User.ID
 			log.Println(UserID)
 		case *slack.MessageEvent:
-			log.Println(ev.Text)
+			//TODO: This should really be non-blocking
 			command := strings.Trim(strings.TrimPrefix(ev.Text, "<@"+UserID+">"), " ")
 			command = strings.Replace(command, "—", "--", -1)
 			if len(command) > 0 && !strings.Contains(command, "uploaded a file") {
