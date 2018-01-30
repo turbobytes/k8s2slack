@@ -124,5 +124,5 @@ The CPU and Memory columns show resource used vs resource requested.
 ### TODO
 
 1. Support more types - nodes, etc.
-2. Create image, example deployment
+2. Make bot response easier to read on mobile.
 3. Prettify/compact event notifications.
