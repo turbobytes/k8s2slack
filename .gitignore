@@ -16,3 +16,4 @@
 #Ignore vendor
 
 vendor/
+bin/

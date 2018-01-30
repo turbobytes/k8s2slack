@@ -15,6 +15,12 @@ Only tested against Kubernetes 1.7.x
 
 TODO
 
+#### Running out-of-cluster using docker
+
+```
+docker run --rm -v ~/.kube/config:/tmp/config -e SLACK_TOKEN="xXXb-XXXXXXXXXX-CCCCCC" -e SLACK_CHANNEL="#kubernetes" -it turbobytes/k8s2slack /bin/k8s2slack -kubeconfig /tmp/config -exclude kubemr
+```
+
 #### Manually running out-of-cluster
 
 ```
