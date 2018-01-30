@@ -119,6 +119,8 @@ default   logdna-agent-x6mjx 1/1   Running 0        15d 19m/100m 19.0% 348Mi/500
 
 The CPU and Memory columns show resource used vs resource requested.
 
+![screenshot](/screenshot.png?raw=true "Screenshot")
+
 ### TODO
 
 1. Support more types - nodes, etc.
