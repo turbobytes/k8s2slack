@@ -1,0 +1,32 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: k8s2slack
+  labels:
+    k8s-app: k8s2slack
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        k8s-app: k8s2slack
+    spec:
+      containers:
+      - name: k8s2slack
+        image: turbobytes/k8s2slack:latest
+        command:
+        - k8s2slack
+        args:
+        - --exclude=kubemr
+        env:
+          - name: SLACK_TOKEN
+            valueFrom:
+              secretKeyRef:
+                name: slack
+                key: bot_token
+          - name: SLACK_CHANNEL
+            value: "#kubernetes"
+        resources:
+          requests:
+            cpu: 50m
+            memory: 50Mi

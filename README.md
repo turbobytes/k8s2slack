@@ -13,7 +13,10 @@ Only tested against Kubernetes 1.7.x
 
 #### In-cluster Kubernetes deployment
 
-TODO
+```
+kubectl create secret generic slack --from-literal=bot_token=xXXb-XXXXXXXXXX-CCCCCC
+kubectl create -f ds.yaml
+```
 
 #### Running out-of-cluster using docker
 
