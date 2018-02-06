@@ -31,6 +31,7 @@ var (
 	heapsterSvcName   = flag.String("heapstersvc", "heapster", "The service name for heapster, set to blank to dissable")
 	heapsterSvcScheme = flag.String("heapsterscheme", "http", "The service name for heapster, set to blank to dissable")
 	heapsterSvcPort   = flag.String("heapsterport", "80", "The port for heapster, set to blank to dissable")
+	everything        = flag.Bool("everything", false, "Set this flag to issue all notifications. Default only Fails")
 )
 
 var (
@@ -337,6 +338,12 @@ func kubectlproxy() {
 func sendtoslack(e *v1.Event) error {
 	//Stollen from https://github.com/ultimateboy/slack8s
 	//TODO: Output needs to be more compact. Does slack have expandable things?
+
+	if !*everything && strings.HasPrefix(e.Reason, "Success") {
+		//Do not spam successful things
+		return nil
+	}
+
 	params := slack.PostMessageParameters{}
 	attachment := slack.Attachment{
 		// The fallback message shows in clients such as IRC or OS X notifications.
