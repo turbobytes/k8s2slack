@@ -339,7 +339,8 @@ func sendtoslack(e *v1.Event) error {
 	//Stollen from https://github.com/ultimateboy/slack8s
 	//TODO: Output needs to be more compact. Does slack have expandable things?
 
-	if !*everything && strings.HasPrefix(e.Reason, "Success") {
+	if !*everything && !strings.HasPrefix(e.Reason, "Fail") {
+		//TODO: Investigate various possible reasons and filter accordingly
 		//Do not spam successful things
 		return nil
 	}
